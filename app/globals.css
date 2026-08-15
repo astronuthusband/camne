@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+:root {
+  /* ---- CAMNE design tokens ---- */
+  /* Ink & paper */
+  --color-ink: #14231f;
+  --color-ink-soft: #3d4d47;
+  --color-paper: #f5f6f4;
+  --color-paper-raised: #ffffff;
+  --color-border: #dce3de;
+
+  /* Brand */
+  --color-teal: #0f5c52;
+  --color-teal-deep: #0a3f38;
+  --color-teal-soft: #e6efec;
+  --color-gold: #e8a33d;
+  --color-gold-soft: #fbeed9;
+  --color-coral: #d64545;
+  --color-coral-soft: #f9e4e2;
+
+  /* Category wash colors (each category gets its own quiet tint) */
+  --color-cat-government: #0f5c52;
+  --color-cat-business: #b5762b;
+  --color-cat-property: #6a4c93;
+  --color-cat-cars: #2f6690;
+  --color-cat-money: #1d7a4c;
+  --color-cat-education: #a63a50;
+  --color-cat-home: #b5762b;
+  --color-cat-everyday: #4a5859;
+}
+
+@theme inline {
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-paper: var(--color-paper);
+  --color-paper-raised: var(--color-paper-raised);
+  --color-border: var(--color-border);
+  --color-teal: var(--color-teal);
+  --color-teal-deep: var(--color-teal-deep);
+  --color-teal-soft: var(--color-teal-soft);
+  --color-gold: var(--color-gold);
+  --color-gold-soft: var(--color-gold-soft);
+  --color-coral: var(--color-coral);
+  --color-coral-soft: var(--color-coral-soft);
+
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-jakarta);
+  --font-mono: var(--font-plex-mono);
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+/* Ticket-stub divider: the signature CAMNE motif, used sparingly for
+   cost / time / verification strips on guide cards. Evokes a receipt
+   or counter slip without being a literal gimmick. */
+.ticket-divider {
+  border-top: 1.5px dashed var(--color-border);
+  position: relative;
+}
+.ticket-divider::before,
+.ticket-divider::after {
+  content: "";
+  position: absolute;
+  top: -7px;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--color-paper);
+  border: 1.5px solid var(--color-border);
+}
+.ticket-divider::before { left: -8px; }
+.ticket-divider::after { right: -8px; }
+
+/* Custom cursor (desktop, non-touch only — see CustomCursor.tsx) */
+.custom-cursor-active,
+.custom-cursor-active * {
+  cursor: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Visible keyboard focus, always */
+:focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
