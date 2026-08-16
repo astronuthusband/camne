@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import type { Metadata } from "next";
-import { categories, getCategory, getGuidesForCategory } from "@/lib/data";
+import { getCategories, getCategoryBySlug } from "@/lib/queries/categories";
+import { getGuidesForCategory } from "@/lib/queries/guides";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { GuideCard } from "@/components/guide/GuideCard";
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const categories = await getCategories();
   return categories.map((c) => ({ slug: c.slug }));
 }
 
@@ -15,11 +17,11 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const category = getCategory(slug);
+  const category = await getCategoryBySlug(slug);
   if (!category) return {};
   return {
     title: category.name,
-    description: category.description,
+    description: category.description ?? undefined,
   };
 }
 
@@ -29,27 +31,23 @@ export default async function CategoryPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const category = getCategory(slug);
+  const category = await getCategoryBySlug(slug);
   if (!category) notFound();
 
-  const guides = getGuidesForCategory(category.slug);
+  const guides = await getGuidesForCategory(category.id);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-      <nav aria-label="Breadcrumb" className="mb-6 text-sm text-ink-soft">
-        <Link href="/" className="hover:text-teal">
-          Home
-        </Link>
-        <span className="mx-2">/</span>
-        <span className="text-ink">{category.name}</span>
-      </nav>
+      <Breadcrumbs
+        items={[{ label: "Home", href: "/" }, { label: category.name }]}
+      />
 
       <div className="mb-8 flex items-center gap-4">
         <span
           className="flex h-12 w-12 items-center justify-center rounded-xl"
           style={{
-            backgroundColor: `color-mix(in srgb, var(--color-cat-${category.slug}) 14%, white)`,
-            color: `var(--color-cat-${category.slug})`,
+            backgroundColor: `color-mix(in srgb, var(--color-cat-${category.slug}, var(--color-teal)) 14%, white)`,
+            color: `var(--color-cat-${category.slug}, var(--color-teal))`,
           }}
         >
           <CategoryIcon slug={category.slug} className="h-6 w-6" />
@@ -58,14 +56,24 @@ export default async function CategoryPage({
           <h1 className="font-display text-3xl font-semibold text-ink">
             {category.name}
           </h1>
-          <p className="text-ink-soft">{category.description}</p>
+          {category.description && (
+            <p className="text-ink-soft">{category.description}</p>
+          )}
         </div>
       </div>
 
       {guides.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {guides.map((g) => (
-            <GuideCard key={g.slug} guide={g} />
+            <GuideCard
+              key={g.slug}
+              guide={{
+                slug: g.slug,
+                title: g.title,
+                estimatedCostText: g.estimatedCostText,
+                estimatedTimeText: g.estimatedTimeText,
+              }}
+            />
           ))}
         </div>
       ) : (

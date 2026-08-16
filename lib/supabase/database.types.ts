@@ -4,6 +4,12 @@
 // you can replace this file with `supabase gen types typescript` output to
 // keep it perfectly in sync automatically. For now this is maintained by
 // hand alongside the migrations, which is fine at this table count.
+//
+// NOTE: `Relationships: []` on every table, plus the empty `Views` and
+// `Functions` records below, aren't decorative — @supabase/postgrest-js's
+// generic types require that exact shape structurally. Omit them and
+// every query result silently types as `never` instead of erroring where
+// you'd notice, which is a very confusing bug to track down.
 
 export type CategorySlug =
   | "government"
@@ -38,6 +44,7 @@ export interface Database {
           name: string;
         };
         Update: Partial<Database["public"]["Tables"]["categories"]["Row"]>;
+        Relationships: [];
       };
       guides: {
         Row: {
@@ -68,6 +75,7 @@ export interface Database {
           title: string;
         };
         Update: Partial<Database["public"]["Tables"]["guides"]["Row"]>;
+        Relationships: [];
       };
       guide_steps: {
         Row: {
@@ -85,6 +93,7 @@ export interface Database {
           content: string;
         };
         Update: Partial<Database["public"]["Tables"]["guide_steps"]["Row"]>;
+        Relationships: [];
       };
       sources: {
         Row: {
@@ -101,6 +110,7 @@ export interface Database {
           url: string;
         };
         Update: Partial<Database["public"]["Tables"]["sources"]["Row"]>;
+        Relationships: [];
       };
       experts: {
         Row: {
@@ -119,6 +129,7 @@ export interface Database {
           name: string;
         };
         Update: Partial<Database["public"]["Tables"]["experts"]["Row"]>;
+        Relationships: [];
       };
       guide_experts: {
         Row: {
@@ -129,11 +140,13 @@ export interface Database {
         };
         Insert: Database["public"]["Tables"]["guide_experts"]["Row"];
         Update: Partial<Database["public"]["Tables"]["guide_experts"]["Row"]>;
+        Relationships: [];
       };
       guide_tags: {
         Row: { guide_id: string; tag: string };
         Insert: Database["public"]["Tables"]["guide_tags"]["Row"];
         Update: Partial<Database["public"]["Tables"]["guide_tags"]["Row"]>;
+        Relationships: [];
       };
       users: {
         Row: {
@@ -146,6 +159,7 @@ export interface Database {
           id: string;
         };
         Update: Partial<Database["public"]["Tables"]["users"]["Row"]>;
+        Relationships: [];
       };
       bookmarks: {
         Row: { user_id: string; guide_id: string; created_at: string };
@@ -154,6 +168,7 @@ export interface Database {
           guide_id: string;
         };
         Update: Partial<Database["public"]["Tables"]["bookmarks"]["Row"]>;
+        Relationships: [];
       };
       feedback: {
         Row: {
@@ -169,6 +184,7 @@ export interface Database {
           helpful: boolean;
         };
         Update: Partial<Database["public"]["Tables"]["feedback"]["Row"]>;
+        Relationships: [];
       };
       search_analytics: {
         Row: {
@@ -181,8 +197,13 @@ export interface Database {
         Insert: Partial<
           Database["public"]["Tables"]["search_analytics"]["Row"]
         > & { query: string };
-        Update: Partial<Database["public"]["Tables"]["search_analytics"]["Row"]>;
+        Update: Partial<
+          Database["public"]["Tables"]["search_analytics"]["Row"]
+        >;
+        Relationships: [];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
   };
 }

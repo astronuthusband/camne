@@ -1,6 +1,7 @@
-// Shared types for CAMNE. These mirror the Supabase schema we designed in
-// Phase 0, so Phase 2 (connecting the real database) is mostly a matter of
-// swapping the data source, not reshaping components.
+// Shared types for CAMNE that aren't tied to the database schema —
+// categories and full guide data now come from lib/queries/ (Phase 3),
+// backed by lib/supabase/database.types.ts. What's left here is content
+// this app curates itself rather than fetching live (see lib/data.ts).
 
 export type CategorySlug =
   | "government"
@@ -11,13 +12,6 @@ export type CategorySlug =
   | "education"
   | "home"
   | "everyday";
-
-export interface Category {
-  slug: CategorySlug;
-  name: string;
-  description: string;
-  guideCount: number; // placeholder count until Phase 2 wires up real data
-}
 
 export interface GuideSummary {
   slug: string;

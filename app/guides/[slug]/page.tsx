@@ -1,10 +1,21 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import type { Metadata } from "next";
-import { guideSummaries, getGuide, getCategory } from "@/lib/data";
+import {
+  getGuideBySlug,
+  getGuidesForCategory,
+  getPublishedGuideSlugs,
+} from "@/lib/queries/guides";
+import { getCategoryById } from "@/lib/queries/categories";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
+import { StepList } from "@/components/guide/StepList";
+import { CommonMistakes } from "@/components/guide/CommonMistakes";
+import { ExpertAdvice } from "@/components/guide/ExpertAdvice";
+import { SourcesList } from "@/components/guide/SourcesList";
+import { GuideCard } from "@/components/guide/GuideCard";
 
-export function generateStaticParams() {
-  return guideSummaries.map((g) => ({ slug: g.slug }));
+export async function generateStaticParams() {
+  const slugs = await getPublishedGuideSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({
@@ -13,65 +24,160 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const guide = getGuide(slug);
+  const guide = await getGuideBySlug(slug);
   if (!guide) return {};
-  return { title: guide.title };
+
+  const title = guide.seo_title || guide.title;
+  const description = guide.seo_description || guide.overview || undefined;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/guides/${guide.slug}` },
+    openGraph: {
+      title,
+      description,
+      type: "article",
+      images: guide.featured_image_url
+        ? [{ url: guide.featured_image_url }]
+        : undefined,
+    },
+  };
 }
 
-// NOTE: this is a Phase 1 stub — just enough for the homepage, popular
-// searches, and category pages to link somewhere real. The full guide
-// template (overview, steps, sources, expert advice, last-verified date)
-// is built in Phase 3 once Supabase is connected.
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("en-MY", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 export default async function GuidePage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const guide = getGuide(slug);
+  const guide = await getGuideBySlug(slug);
   if (!guide) notFound();
-  const category = getCategory(guide.categorySlug);
+
+  const category = await getCategoryById(guide.category_id);
+  const relatedGuides = await getGuidesForCategory(guide.category_id, {
+    excludeGuideId: guide.id,
+    limit: 3,
+  });
+
+  const whatYoullNeed = (guide.what_youll_need ?? []) as string[];
+  const commonMistakes = (guide.common_mistakes ?? []) as string[];
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
-      <nav aria-label="Breadcrumb" className="mb-6 text-sm text-ink-soft">
-        <Link href="/" className="hover:text-teal">
-          Home
-        </Link>
-        <span className="mx-2">/</span>
-        {category && (
-          <>
-            <Link
-              href={`/categories/${category.slug}`}
-              className="hover:text-teal"
-            >
-              {category.name}
-            </Link>
-            <span className="mx-2">/</span>
-          </>
-        )}
-        <span className="text-ink">{guide.title}</span>
-      </nav>
+      <Breadcrumbs
+        items={[
+          { label: "Home", href: "/" },
+          ...(category
+            ? [{ label: category.name, href: `/categories/${category.slug}` }]
+            : []),
+          { label: guide.title },
+        ]}
+      />
 
       <h1 className="font-display text-3xl font-semibold text-ink sm:text-4xl">
         {guide.title}
       </h1>
 
-      <div className="ticket-divider mt-6 flex items-center justify-between pt-3 font-mono text-sm text-ink-soft">
-        <span>{guide.estimatedCostText}</span>
-        <span>{guide.estimatedTimeText}</span>
-      </div>
+      {guide.last_verified_at && (
+        <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-ink-soft">
+          <span className="h-1.5 w-1.5 rounded-full bg-teal" />
+          Last verified: {formatDate(guide.last_verified_at)}
+        </p>
+      )}
 
-      <div className="mt-8 rounded-2xl border border-dashed border-border p-6 text-sm text-ink-soft">
-        <p className="font-medium text-ink">
-          This guide&apos;s full content is coming in Phase 3.
+      {(guide.estimated_cost_text || guide.estimated_time_text) && (
+        <div className="ticket-divider mt-5 flex items-center justify-between pt-3 font-mono text-sm text-ink-soft">
+          <span>{guide.estimated_cost_text || "—"}</span>
+          <span>{guide.estimated_time_text || "—"}</span>
+        </div>
+      )}
+
+      {guide.overview && (
+        <p className="mt-6 text-base leading-relaxed text-ink">
+          {guide.overview}
         </p>
-        <p className="mt-1">
-          Overview, step-by-step instructions, common mistakes, expert
-          advice, sources, and a &ldquo;last verified&rdquo; date will
-          render here once guides are connected to Supabase.
-        </p>
-      </div>
+      )}
+
+      {guide.who_this_is_for && (
+        <section className="mt-6">
+          <h2 className="font-display text-lg font-semibold text-ink">
+            Who this is for
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+            {guide.who_this_is_for}
+          </p>
+        </section>
+      )}
+
+      {guide.before_you_start && (
+        <section className="mt-6">
+          <h2 className="font-display text-lg font-semibold text-ink">
+            Before you start
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+            {guide.before_you_start}
+          </p>
+        </section>
+      )}
+
+      {whatYoullNeed.length > 0 && (
+        <section className="mt-6">
+          <h2 className="font-display text-lg font-semibold text-ink">
+            What you&apos;ll need
+          </h2>
+          <ul className="mt-2 space-y-1.5 text-sm text-ink-soft">
+            {whatYoullNeed.map((item, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="text-teal">•</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <StepList steps={guide.steps} />
+      <CommonMistakes items={commonMistakes} />
+      <ExpertAdvice attributions={guide.expertAttributions} />
+      <SourcesList sources={guide.sources} />
+
+      <p className="mt-8 border-t border-border pt-6 text-xs text-ink-soft">
+        This guide is for general information and does not replace
+        professional legal, financial, or tax advice. Fees and
+        requirements are set by the relevant authority and may change —
+        always confirm against the official sources above before you
+        apply.
+      </p>
+
+      {relatedGuides.length > 0 && (
+        <section className="mt-10">
+          <h2 className="mb-3 font-display text-lg font-semibold text-ink">
+            Related guides
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {relatedGuides.map((g) => (
+              <GuideCard
+                key={g.slug}
+                guide={{
+                  slug: g.slug,
+                  title: g.title,
+                  estimatedCostText: g.estimatedCostText,
+                  estimatedTimeText: g.estimatedTimeText,
+                }}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

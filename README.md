@@ -4,20 +4,24 @@
 
 How to get things done in Malaysia — clear, practical, Malaysian-specific guides.
 
-## Status: Phase 2 complete
+## Status: Phase 3 complete
 
-Phase 1 (project setup, PWA shell, design system, homepage, nav, search UI,
-categories) plus Phase 2 (Supabase schema, Row Level Security, seed data,
-and the app's database connection code). Guide pages still render the
-Phase 1 stub template — Phase 3 replaces `lib/data.ts` with real Supabase
-queries and builds out the full guide content template.
+Phases 1–2 (project setup, PWA shell, design system, Supabase schema/RLS)
+plus Phase 3: categories, guide listings, and guide detail pages now read
+live from Supabase — `lib/data.ts` no longer backs them. Two guides
+(`renew-malaysian-passport`, `register-ssm`) have full real content
+(overview, steps, sources, common mistakes) as worked examples of the
+complete template; the other 8 V1 guides are still shells and render
+correctly with just their title/cost/time until content is added.
+Search still runs against the placeholder list in `lib/data.ts` — that's
+Phase 4.
 
 ## Stack
 
 - Next.js 16 (App Router) + React 19 + TypeScript
 - Tailwind CSS v4
 - Serwist (PWA service worker / precaching)
-- Supabase (Postgres, RLS, Auth — schema is live; app isn't querying it yet, that's Phase 3)
+- Supabase (Postgres, RLS, live-queried by categories/guides pages)
 
 ## Getting started
 
@@ -38,26 +42,37 @@ for details. Don't remove the `--webpack` flag.
 
 - `supabase/migrations/` — SQL migrations, run in order via the Supabase
   SQL Editor. `0001` creates all tables, `0002` enables Row Level Security,
-  `0003` seeds categories and the 10 V1 guides (as shells — full content
-  comes in Phase 3).
-- `lib/supabase/client.ts` — browser client, for `"use client"` components.
-- `lib/supabase/server.ts` — server client, for Server Components/Actions.
-  Respects RLS and the signed-in user's session.
+  `0003` seeds categories and the 10 V1 guides (as shells), `0004` fills in
+  real content for the passport and SSM guides.
+- `lib/supabase/server.ts` — cookie-aware server client, for Server
+  Components/Actions that need to know the signed-in user (`auth.uid()`).
+  Not used yet — reserved for Phase 7 (bookmarks/auth).
+- `lib/supabase/static.ts` — `createPublicClient()`, the client actually
+  used by every current query (categories, guides, steps, sources,
+  experts). No cookies, no session — safe everywhere including
+  `generateStaticParams` at build time. Every RLS policy those tables use
+  only checks `status = 'published'` or `is_admin()`, never a specific
+  user, so there's nothing this client is missing out on for now.
 - `lib/supabase/admin.ts` — service-role client. **Server-only** (enforced
-  by the `server-only` package) — bypasses RLS entirely, never expose to
-  the browser. Reserved for the admin dashboard (Phase 6).
+  by the `server-only` package) — bypasses RLS entirely. Reserved for the
+  admin dashboard (Phase 6).
 - `lib/supabase/database.types.ts` — hand-written types mirroring the
-  schema. Update this alongside any future migration, or regenerate with
-  the Supabase CLI once you have it installed.
+  schema. Note: every table needs a `Relationships: []` field even though
+  we don't use embedded relation queries — `@supabase/postgrest-js`
+  requires that shape structurally, and omitting it makes every query
+  result silently type as `never` with no clear error.
+- `lib/queries/categories.ts`, `lib/queries/guides.ts` — typed query
+  functions, wrapped in React's `cache()` so a page and its
+  `generateMetadata` calling for the same data only hit Supabase once.
 
 ## Project structure
 
 ```
 app/                  Routes (App Router)
-  page.tsx            Homepage
-  search/             Search page
-  categories/[slug]/  Category listing pages
-  guides/[slug]/      Guide detail pages (Phase 1 stub — full template in Phase 3)
+  page.tsx            Homepage — categories fetched live from Supabase
+  search/             Search page (still placeholder data — Phase 4)
+  categories/[slug]/  Category listing pages — live from Supabase
+  guides/[slug]/      Full guide template — live from Supabase
   api/health/         Supabase connection check (temporary, Phase 2)
   manifest.ts         PWA web app manifest
   sw.ts               Service worker source (compiled by Serwist into public/sw.js)
@@ -65,14 +80,16 @@ components/
   layout/             Navbar, Footer
   home/               Hero, PopularSearches, CategoryGrid
   search/             SearchBar, SearchResults
-  guide/              GuideCard
-  ui/                 CategoryIcon, CustomCursor
+  guide/              GuideCard, StepList, SourcesList, SourceTypeBadge,
+                       CommonMistakes, ExpertAdvice
+  ui/                 CategoryIcon, CustomCursor, Breadcrumbs
   pwa/                InstallPrompt
 lib/
-  types.ts            Shared TypeScript types (mirror the Phase 0 DB schema)
-  data.ts             Placeholder content — replaced by Supabase queries in Phase 3
+  types.ts            Types for content this app curates itself (not DB-backed)
+  data.ts             Curated homepage "popular searches" + search placeholder data
   supabase/           Supabase clients + database types (see above)
-supabase/migrations/  SQL migrations, source of truth for the schema
+  queries/            Typed Supabase query functions for categories/guides
+supabase/migrations/  SQL migrations, source of truth for the schema and content
 public/icons/         PWA icon set (placeholder mark — swap once visual identity is final)
 ```
 

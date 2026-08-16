@@ -64,9 +64,11 @@ export function CategoryIcon({
   slug,
   className,
 }: {
-  slug: CategorySlug;
+  slug: string;
   className?: string;
 }) {
+  const iconPaths =
+    slug in paths ? paths[slug as CategorySlug] : paths.everyday;
   return (
     <svg
       viewBox="0 0 24 24"
@@ -78,7 +80,7 @@ export function CategoryIcon({
       className={className}
       aria-hidden="true"
     >
-      {paths[slug]}
+      {iconPaths}
     </svg>
   );
 }

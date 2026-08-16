@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { categories } from "@/lib/data";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
+import type { CategoryRow } from "@/lib/queries/categories";
 
 // Each category gets its own quiet color wash (set in globals.css as
 // --color-cat-*) rather than one repeated brand accent everywhere — makes
 // the grid scannable and hints that CAMNE spans real breadth of topics.
-export function CategoryGrid() {
+// Falls back to teal for any future category slug we haven't styled yet.
+export function CategoryGrid({ categories }: { categories: CategoryRow[] }) {
   return (
     <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
       <div className="mb-6 flex items-end justify-between">
@@ -23,17 +24,19 @@ export function CategoryGrid() {
             <span
               className="flex h-10 w-10 items-center justify-center rounded-xl"
               style={{
-                backgroundColor: `color-mix(in srgb, var(--color-cat-${cat.slug}) 14%, white)`,
-                color: `var(--color-cat-${cat.slug})`,
+                backgroundColor: `color-mix(in srgb, var(--color-cat-${cat.slug}, var(--color-teal)) 14%, white)`,
+                color: `var(--color-cat-${cat.slug}, var(--color-teal))`,
               }}
             >
               <CategoryIcon slug={cat.slug} className="h-5 w-5" />
             </span>
             <div>
               <p className="font-medium text-ink">{cat.name}</p>
-              <p className="mt-0.5 text-xs text-ink-soft">
-                {cat.description}
-              </p>
+              {cat.description && (
+                <p className="mt-0.5 text-xs text-ink-soft">
+                  {cat.description}
+                </p>
+              )}
             </div>
           </Link>
         ))}

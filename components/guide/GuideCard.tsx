@@ -1,10 +1,16 @@
 import Link from "next/link";
-import type { GuideSummary } from "@/lib/types";
+
+export interface GuideCardInfo {
+  slug: string;
+  title: string;
+  estimatedCostText?: string | null;
+  estimatedTimeText?: string | null;
+}
 
 // Signature "ticket-stub" info strip: cost and time set in monospace,
 // separated by a dashed ticket-divider — the one place we lean into the
 // receipt/counter-slip motif that ties back to what CAMNE actually does.
-export function GuideCard({ guide }: { guide: GuideSummary }) {
+export function GuideCard({ guide }: { guide: GuideCardInfo }) {
   return (
     <Link
       href={`/guides/${guide.slug}`}
@@ -14,8 +20,8 @@ export function GuideCard({ guide }: { guide: GuideSummary }) {
         {guide.title}
       </p>
       <div className="ticket-divider mt-4 flex items-center justify-between pt-3 font-mono text-xs text-ink-soft">
-        <span>{guide.estimatedCostText}</span>
-        <span>{guide.estimatedTimeText}</span>
+        <span>{guide.estimatedCostText || "—"}</span>
+        <span>{guide.estimatedTimeText || "—"}</span>
       </div>
     </Link>
   );
