@@ -11,16 +11,6 @@
 // every query result silently types as `never` instead of erroring where
 // you'd notice, which is a very confusing bug to track down.
 
-export type CategorySlug =
-  | "government"
-  | "business"
-  | "property"
-  | "cars"
-  | "money"
-  | "education"
-  | "home"
-  | "everyday";
-
 export type GuideStatus = "draft" | "published";
 export type Locale = "en" | "ms";
 export type SourceType = "official" | "expert" | "reference";
@@ -204,6 +194,19 @@ export interface Database {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      search_guides: {
+        Args: { search_query: string; result_limit?: number };
+        Returns: {
+          slug: string;
+          title: string;
+          estimated_cost_text: string | null;
+          estimated_time_text: string | null;
+          category_slug: string;
+          category_name: string;
+          rank: number;
+        }[];
+      };
+    };
   };
 }

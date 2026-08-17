@@ -5,6 +5,7 @@ export interface GuideCardInfo {
   title: string;
   estimatedCostText?: string | null;
   estimatedTimeText?: string | null;
+  categoryName?: string | null;
 }
 
 // Signature "ticket-stub" info strip: cost and time set in monospace,
@@ -16,6 +17,11 @@ export function GuideCard({ guide }: { guide: GuideCardInfo }) {
       href={`/guides/${guide.slug}`}
       className="group flex flex-col rounded-2xl border border-border bg-paper-raised p-5 transition hover:-translate-y-0.5 hover:border-teal hover:shadow-md"
     >
+      {guide.categoryName && (
+        <span className="mb-2 text-xs font-medium uppercase tracking-wide text-teal">
+          {guide.categoryName}
+        </span>
+      )}
       <p className="font-display text-lg font-semibold text-ink group-hover:text-teal">
         {guide.title}
       </p>

@@ -2,11 +2,11 @@ import { Suspense } from "react";
 import { SearchResults } from "@/components/search/SearchResults";
 import { SearchBar } from "@/components/search/SearchBar";
 
-// NOTE: this is a Phase 1 UI shell. It filters the small local placeholder
-// dataset in lib/data.ts on the client. Phase 4 replaces the matching logic
-// with real Postgres full-text search (and later, natural-language intent
-// matching) — the <SearchResults> component boundary is drawn so that swap
-// doesn't touch this page.
+// Search runs server-side via lib/queries/search.ts (Postgres full-text
+// search + a small Malay-keyword bridge + an ILIKE fallback for short/
+// partial queries) — see that file for the matching strategy. This page
+// stays a thin shell: parse the query param, render the search box, hand
+// the rest to <SearchResults>.
 export default async function SearchPage({
   searchParams,
 }: {

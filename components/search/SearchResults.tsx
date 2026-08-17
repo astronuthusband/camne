@@ -1,15 +1,9 @@
-import { guideSummaries } from "@/lib/data";
-import { GuideCard } from "@/components/guide/GuideCard";
-import { popularSearches } from "@/lib/data";
 import Link from "next/link";
+import { searchGuides, logSearch } from "@/lib/queries/search";
+import { popularSearches } from "@/lib/data";
+import { GuideCard } from "@/components/guide/GuideCard";
 
-function matches(query: string) {
-  const q = query.trim().toLowerCase();
-  if (!q) return [];
-  return guideSummaries.filter((g) => g.title.toLowerCase().includes(q));
-}
-
-export function SearchResults({ query }: { query: string }) {
+export async function SearchResults({ query }: { query: string }) {
   if (!query.trim()) {
     return (
       <div className="mt-8">
@@ -31,7 +25,11 @@ export function SearchResults({ query }: { query: string }) {
     );
   }
 
-  const results = matches(query);
+  const results = await searchGuides(query);
+
+  // Fire-and-forget — doesn't block rendering, and failures are already
+  // swallowed inside logSearch itself.
+  void logSearch(query, results.length);
 
   if (results.length === 0) {
     return (
@@ -50,7 +48,16 @@ export function SearchResults({ query }: { query: string }) {
   return (
     <div className="mt-8 grid gap-4 sm:grid-cols-2">
       {results.map((g) => (
-        <GuideCard key={g.slug} guide={g} />
+        <GuideCard
+          key={g.slug}
+          guide={{
+            slug: g.slug,
+            title: g.title,
+            estimatedCostText: g.estimatedCostText,
+            estimatedTimeText: g.estimatedTimeText,
+            categoryName: g.categoryName,
+          }}
+        />
       ))}
     </div>
   );
