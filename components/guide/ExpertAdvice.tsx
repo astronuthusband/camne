@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { GuideExpertAttribution } from "@/lib/queries/guides";
 
 export function ExpertAdvice({
@@ -23,7 +24,10 @@ export function ExpertAdvice({
                 &ldquo;{adviceText}&rdquo;
               </p>
             )}
-            <div className="mt-3 flex items-center gap-3">
+            <Link
+              href={`/experts/${expert.slug}`}
+              className="mt-3 flex items-center gap-3 group"
+            >
               {expert.photo_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -37,7 +41,9 @@ export function ExpertAdvice({
                 </span>
               )}
               <div className="text-sm">
-                <p className="font-medium text-ink">{expert.name}</p>
+                <p className="font-medium text-ink group-hover:text-teal">
+                  {expert.name}
+                </p>
                 <p className="text-ink-soft">
                   {[expert.profession, expert.company]
                     .filter(Boolean)
@@ -51,7 +57,7 @@ export function ExpertAdvice({
                     })}`}
                 </p>
               </div>
-            </div>
+            </Link>
           </div>
         ))}
       </div>

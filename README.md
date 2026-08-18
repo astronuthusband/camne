@@ -4,17 +4,23 @@
 
 How to get things done in Malaysia — clear, practical, Malaysian-specific guides.
 
-## Status: Phase 4 complete
+## Status: Phase 5 complete
 
-Phases 1–3 (project setup, PWA shell, design system, Supabase schema/RLS,
-live categories/guides) plus Phase 4: real search. `/search` now runs
-Postgres full-text search against a generated `search_vector` column on
-`guides`, exposed through a single `search_guides` RPC — see
-`supabase/migrations/0005_search.sql` and `lib/queries/search.ts` for the
-matching strategy (full-text search, a small Malay-keyword bridge, and an
-ILIKE fallback for short/partial queries). Every search is logged to
-`search_analytics`. Homepage "popular searches" stays hand-curated by
-design, not analytics-driven — see the note in `lib/data.ts`.
+Phases 1–4 (setup, PWA, Supabase, live categories/guides, full-text
+search) plus Phase 5: expert profile pages at `/experts/[slug]` —
+bio, credentials, photo (or an initial-letter fallback), and every
+published guide they've contributed to. Guide pages already showed
+expert attribution since Phase 3 (`ExpertAdvice`); Phase 5 makes the
+expert's name a real link to their profile. No new migration was
+needed — the `experts` and `guide_experts` tables and their RLS
+policies were already set up in Phase 2.
+
+**No experts are seeded.** CAMNE's expert content is meant to come from
+real interviews, so this ships with a working, empty feature rather than
+placeholder professional profiles — a fabricated "expert" is a much
+worse look for a trust-driven product than an empty section. See "Adding
+your first expert" below for the exact SQL once you've done a real
+interview, or wait for the Phase 6 admin dashboard.
 
 ## Stack
 
@@ -60,9 +66,38 @@ for details. Don't remove the `--webpack` flag.
   requires that shape structurally, and omitting it makes every query
   result silently type as `never` with no clear error.
 - `lib/queries/categories.ts`, `lib/queries/guides.ts`,
-  `lib/queries/search.ts` — typed query functions, wrapped in React's
-  `cache()` where a page and its `generateMetadata` might both ask for
-  the same data in one request.
+  `lib/queries/search.ts`, `lib/queries/experts.ts` — typed query
+  functions, wrapped in React's `cache()` where a page and its
+  `generateMetadata` might both ask for the same data in one request.
+
+## Adding your first expert
+
+Once you've done a real interview, add them directly in the Supabase SQL
+Editor:
+
+```sql
+insert into experts (slug, name, profession, company, bio, credentials)
+values (
+  'jane-tan',                                    -- URL: /experts/jane-tan
+  'Jane Tan',
+  'Property Lawyer',
+  'Tan & Co',
+  'A short bio — background, what they specialize in.',
+  '["15 years in conveyancing", "Bar Council member"]'::jsonb
+);
+
+-- Then attach them to a guide:
+insert into guide_experts (guide_id, expert_id, advice_text, interviewed_at)
+select
+  (select id from guides where slug = 'buy-my-first-house' and locale = 'en'),
+  (select id from experts where slug = 'jane-tan'),
+  'The actual quote or paraphrased advice from the interview.',
+  '2026-08-17';
+```
+
+That's it — the guide page and the expert's profile page both pick it up
+immediately, no code changes needed. Phase 6 will wrap this in an admin
+UI so you're not hand-writing SQL for every expert.
 
 ## Search architecture
 
@@ -94,6 +129,7 @@ app/                  Routes (App Router)
   search/             Search page — real Postgres full-text search
   categories/[slug]/  Category listing pages — live from Supabase
   guides/[slug]/      Full guide template — live from Supabase
+  experts/[slug]/     Expert profile pages — live from Supabase
   api/health/         Supabase connection check (temporary, Phase 2)
   manifest.ts         PWA web app manifest
   sw.ts               Service worker source (compiled by Serwist into public/sw.js)
@@ -109,7 +145,7 @@ lib/
   types.ts            Types for content this app curates itself (not DB-backed)
   data.ts             Curated homepage "popular searches" list
   supabase/           Supabase clients + database types (see above)
-  queries/            Typed Supabase query functions: categories, guides, search
+  queries/            Typed Supabase query functions: categories, guides, search, experts
 supabase/migrations/  SQL migrations, source of truth for the schema and content
 public/icons/         PWA icon set (placeholder mark — swap once visual identity is final)
 ```
