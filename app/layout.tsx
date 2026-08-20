@@ -4,6 +4,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CustomCursor } from "@/components/ui/CustomCursor";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { AuthNav } from "@/components/layout/AuthNav";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -59,7 +60,7 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col font-sans">
         <CustomCursor />
-        <Navbar />
+        <Navbar authSlot={<AuthNav />} />
         <main className="flex-1">{children}</main>
         <Footer />
         <InstallPrompt />

@@ -12,6 +12,8 @@ import { CommonMistakes } from "@/components/guide/CommonMistakes";
 import { ExpertAdvice } from "@/components/guide/ExpertAdvice";
 import { SourcesList } from "@/components/guide/SourcesList";
 import { GuideCard } from "@/components/guide/GuideCard";
+import { BookmarkButton } from "@/components/guide/BookmarkButton";
+import { FeedbackWidget } from "@/components/guide/FeedbackWidget";
 
 export async function generateStaticParams() {
   const slugs = await getPublishedGuideSlugs();
@@ -83,9 +85,14 @@ export default async function GuidePage({
         ]}
       />
 
-      <h1 className="font-display text-3xl font-semibold text-ink sm:text-4xl">
-        {guide.title}
-      </h1>
+      <div className="flex items-start justify-between gap-4">
+        <h1 className="font-display text-3xl font-semibold text-ink sm:text-4xl">
+          {guide.title}
+        </h1>
+        <div className="mt-1 shrink-0">
+          <BookmarkButton guideId={guide.id} />
+        </div>
+      </div>
 
       {guide.last_verified_at && (
         <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-ink-soft">
@@ -149,6 +156,7 @@ export default async function GuidePage({
       <CommonMistakes items={commonMistakes} />
       <ExpertAdvice attributions={guide.expertAttributions} />
       <SourcesList sources={guide.sources} />
+      <FeedbackWidget guideId={guide.id} />
 
       <p className="mt-8 border-t border-border pt-6 text-xs text-ink-soft">
         This guide is for general information and does not replace
