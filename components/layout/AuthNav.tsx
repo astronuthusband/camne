@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 // Deliberately a client component, not a server-side auth check in the
@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/client";
 // exactly this kind of auth-aware nav widget.
 export function AuthNav() {
   const router = useRouter();
+  const pathname = usePathname();
   const [email, setEmail] = useState<string | null | undefined>(undefined);
 
   useEffect(() => {
@@ -28,7 +29,16 @@ export function AuthNav() {
     });
 
     return () => listener.subscription.unsubscribe();
-  }, []);
+    // Re-running this on every pathname change is the important bit:
+    // logging in happens via a Server Action that calls redirect(),
+    // which Next.js resolves as a SOFT client-side navigation, not a
+    // full page reload. This component lives in the root layout, so it
+    // never unmounts across that navigation — without re-checking here,
+    // it would keep showing the pre-login "Log in" state until the user
+    // manually refreshed. onAuthStateChange alone doesn't catch this,
+    // because the sign-in happened through the server-side client, not
+    // this browser client instance.
+  }, [pathname]);
 
   async function handleSignOut() {
     const supabase = createClient();

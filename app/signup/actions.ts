@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSiteUrl } from "@/lib/site-url";
 
 export async function signUp(
   _prevState: { error: string | null },
@@ -19,7 +20,21 @@ export async function signUp(
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      // Without this, Supabase's confirmation email links to the bare
+      // Site URL with a `?code=` param and nothing to handle it — see
+      // app/auth/callback/route.ts, which is what this actually points
+      // to. getSiteUrl() (lib/site-url.ts) resolves to the real
+      // deployed URL automatically, not whatever localhost happened to
+      // be running when this was written.
+      emailRedirectTo: `${getSiteUrl()}/auth/callback${
+        returnTo !== "/" ? `?next=${encodeURIComponent(returnTo)}` : ""
+      }`,
+    },
+  });
 
   if (error) {
     // Supabase returns a generic-looking error for "email already
