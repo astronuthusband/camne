@@ -43,6 +43,27 @@ export const getPublishedGuideSlugs = cache(async (): Promise<string[]> => {
   return (data ?? []).map((g) => g.slug);
 });
 
+export interface SitemapGuideEntry {
+  slug: string;
+  updatedAt: string;
+}
+
+// Separate from getPublishedGuideSlugs above — the sitemap wants
+// updated_at too (search engines use it as a freshness signal), no
+// reason to make every other caller of the slug-only query pay for a
+// column it doesn't need.
+export const getGuidesForSitemap = cache(
+  async (): Promise<SitemapGuideEntry[]> => {
+    const supabase = createPublicClient();
+    const { data, error } = await supabase
+      .from("guides")
+      .select("slug, updated_at")
+      .eq("status", "published");
+    if (error) throw error;
+    return (data ?? []).map((g) => ({ slug: g.slug, updatedAt: g.updated_at }));
+  }
+);
+
 export const getGuideBySlug = cache(
   async (slug: string): Promise<FullGuide | null> => {
     const supabase = createPublicClient();

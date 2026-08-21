@@ -107,6 +107,12 @@ export async function deleteCategory(
   const id = String(formData.get("id") ?? "");
   if (!id) return { error: "Missing category id." };
 
+  const { data: existing } = await supabase
+    .from("categories")
+    .select("slug")
+    .eq("id", id)
+    .maybeSingle();
+
   const { error } = await supabase.from("categories").delete().eq("id", id);
 
   if (error) {
@@ -121,5 +127,6 @@ export async function deleteCategory(
 
   revalidatePath("/admin/categories");
   revalidatePath("/");
+  if (existing) revalidatePath(`/categories/${existing.slug}`);
   return { error: null };
 }

@@ -118,9 +118,33 @@ export async function deleteExpert(
   const id = String(formData.get("id") ?? "");
   if (!id) return { error: "Missing expert id." };
 
+  // Fetch what needs revalidating BEFORE deleting — the expert's own
+  // page, and every guide that showed their attribution (the cascade
+  // delete removes those guide_experts rows, so this is the last chance
+  // to know which guide pages need to stop showing this expert).
+  const [{ data: expert }, { data: links }] = await Promise.all([
+    supabase.from("experts").select("slug").eq("id", id).maybeSingle(),
+    supabase.from("guide_experts").select("guide_id").eq("expert_id", id),
+  ]);
+
+  let guideSlugs: string[] = [];
+  if (links && links.length > 0) {
+    const { data: guides } = await supabase
+      .from("guides")
+      .select("slug")
+      .in(
+        "id",
+        links.map((l) => l.guide_id)
+      );
+    guideSlugs = (guides ?? []).map((g) => g.slug);
+  }
+
   const { error } = await supabase.from("experts").delete().eq("id", id);
   if (error) return { error: error.message };
 
   revalidatePath("/admin/experts");
+  if (expert) revalidatePath(`/experts/${expert.slug}`);
+  for (const slug of guideSlugs) revalidatePath(`/guides/${slug}`);
+
   return { error: null };
 }

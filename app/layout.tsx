@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/Footer";
 import { CustomCursor } from "@/components/ui/CustomCursor";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { AuthNav } from "@/components/layout/AuthNav";
+import { getSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -26,7 +27,7 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://camne.my"),
+  metadataBase: new URL(getSiteUrl()),
   title: {
     default: "CAMNE — Here's how.",
     template: "%s | CAMNE",
