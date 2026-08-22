@@ -15,10 +15,15 @@ export async function requestPasswordReset(
 
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    // Reuses the same callback route as email confirmation — it just
-    // exchanges the code for a session either way. `next` sends them on
-    // to the actual "set a new password" form afterward.
-    redirectTo: `${getSiteUrl()}/auth/callback?next=/reset-password`,
+    // Straight to /reset-password, no query string — Supabase's
+    // Redirect URLs allowlist does exact matching, and a URL with
+    // ?next=... appended won't match a plain allowlist entry. That
+    // mismatch causes Supabase to silently fall back to the bare Site
+    // URL instead of erroring, which is exactly what was happening
+    // before this fix. /reset-password now handles the code exchange
+    // itself (see that page), so there's no need to round-trip through
+    // /auth/callback here at all.
+    redirectTo: `${getSiteUrl()}/reset-password`,
   });
 
   // Deliberately show the same "check your email" message whether or

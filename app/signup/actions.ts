@@ -24,15 +24,17 @@ export async function signUp(
     email,
     password,
     options: {
-      // Without this, Supabase's confirmation email links to the bare
-      // Site URL with a `?code=` param and nothing to handle it — see
-      // app/auth/callback/route.ts, which is what this actually points
-      // to. getSiteUrl() (lib/site-url.ts) resolves to the real
-      // deployed URL automatically, not whatever localhost happened to
-      // be running when this was written.
-      emailRedirectTo: `${getSiteUrl()}/auth/callback${
-        returnTo !== "/" ? `?next=${encodeURIComponent(returnTo)}` : ""
-      }`,
+      // No query string here on purpose — Supabase's Redirect URLs
+      // allowlist does exact matching, and a URL with a query string
+      // appended won't match a plain allowlist entry, causing Supabase
+      // to silently fall back to the bare Site URL instead of erroring.
+      // That's a real bug this project hit with the password-reset flow
+      // (see app/forgot-password/actions.ts) — this keeps signup from
+      // having the same latent problem for anyone who signs up with a
+      // non-default returnTo. Cost: after confirming their email, they
+      // land on the homepage rather than back where they started —
+      // a minor UX trade for not silently breaking.
+      emailRedirectTo: `${getSiteUrl()}/auth/callback`,
     },
   });
 

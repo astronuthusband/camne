@@ -2,14 +2,30 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ResetPasswordForm } from "./ResetPasswordForm";
 
-export default async function ResetPasswordPage() {
+export default async function ResetPasswordPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ code?: string }>;
+}) {
+  const { code } = await searchParams;
   const supabase = await createClient();
+
+  // Supabase's PKCE recovery flow lands here with a `code` param —
+  // exchange it for a session before checking who's signed in. This
+  // page used to rely on /auth/callback doing this first, but that
+  // required a query string on the redirectTo URL that Supabase's
+  // allowlist matching didn't accept — see the comment in
+  // app/forgot-password/actions.ts for the full story.
+  if (code) {
+    await supabase.auth.exchangeCodeForSession(code);
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Reached directly, without going through the email link (which sets
-  // the session via /auth/callback first) — nothing to update.
+  // Reached without a valid code or an existing recovery session —
+  // nothing to update.
   if (!user) {
     return (
       <div className="mx-auto max-w-md px-4 py-16 text-center sm:px-6">
